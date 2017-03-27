@@ -1,3 +1,2 @@
 # Class pre-loader
-- 
-- For heavy static initializer, load classes before 
+- A library that can pre-load classes for that needs to pre-call static initializer.

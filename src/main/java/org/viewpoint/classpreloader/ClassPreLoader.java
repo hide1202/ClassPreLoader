@@ -61,12 +61,20 @@ public class ClassPreLoader {
         return src.replace('.', '/');
     }
 
+    private static String dotToPathSeperator(String src) {
+        return src.replace('.', File.separatorChar);
+    }
+
+    private static String pathSeperatorToDot(String src) {
+        return src.replace(File.separatorChar, '.');
+    }
+
     private Optional<String> classNameFromFilePath(String src) {
-        String replacePackage = dotToSlash(prefix);
+        String replacePackage = dotToPathSeperator(prefix);
         int i = src.indexOf(replacePackage);
         if (i <= -1)
             return Optional.empty();
-        String startWithPackageName = src.substring(i).replace('/', '.');
+        String startWithPackageName = src.substring(i).replace(File.pathSeparatorChar, '.');
         int lastDotClassIndex = startWithPackageName.lastIndexOf(".class");
         return Optional.of(startWithPackageName.substring(0, lastDotClassIndex));
     }
@@ -76,19 +84,17 @@ public class ClassPreLoader {
         Stream<File> dirStream = directoriesFromUrls(resources);
         Stream<Path> classFilePathStream = classFilePathListFromFiles(dirStream);
 
-        return classFilePathStream
+        Stream<Path> classWithAnnotationFilePathStream = classFilePathStream.filter(path -> new AnnotationChecker(path).checkAnnotation(anotationCls));
+
+        return classWithAnnotationFilePathStream
                 .map(p -> p.toFile().getAbsolutePath())
                 .map(this::classNameFromFilePath)
                 .flatMap(ClassPreLoader::skipOptionalEmpty)
+                .map(ClassPreLoader::pathSeperatorToDot)
                 .map(className -> {
                     try {
-                        Class<?> clazz = Class.forName(className);
-                        if (clazz != null && clazz.isAnnotationPresent(anotationCls)) {
-                            return Optional.of(clazz);
-                        }
-                        return Optional.<Class>empty();
+                        return Optional.ofNullable(Class.forName(className));
                     } catch (ClassNotFoundException ignored) {
-                        ignored.printStackTrace();
                     }
                     return Optional.<Class>empty();
                 })

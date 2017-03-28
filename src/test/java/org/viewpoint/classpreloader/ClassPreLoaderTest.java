@@ -9,13 +9,6 @@ import java.util.Optional;
 public class ClassPreLoaderTest {
     static boolean isSuccess = false;
 
-    @PreLoadable
-    static class PreLoadableTest {
-        static {
-            isSuccess = true;
-        }
-    }
-
     @Test
     public void loadForPreLoadableTest() throws Exception {
         ClassPreLoader loader = new ClassPreLoader("org.viewpoint");
@@ -25,5 +18,20 @@ public class ClassPreLoaderTest {
         Assert.assertTrue(pltCls.isPresent());
         Assert.assertEquals(PreLoadableTest.class, pltCls.orElse(Object.class));
         Assert.assertTrue(isSuccess);
+    }
+
+    @PreLoadable
+    static class PreLoadableTest {
+        static {
+            System.out.println("Call PreloadableTest static initializer");
+            isSuccess = true;
+        }
+    }
+
+    static class LoadTest {
+        static {
+            System.out.println("Call LoadTest static initializer");
+            isSuccess = true;
+        }
     }
 }
